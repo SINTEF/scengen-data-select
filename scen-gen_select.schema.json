@@ -1,0 +1,331 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"type": "object",
+	"title": "Parameters for scenario generation",
+	"required": [
+		"input",
+		"scen-gen",
+		"output"
+	],
+	"properties": {
+		"input": {
+			"type": "object",
+			"title": "Input file",
+			"description": "Properties of the main data file",
+			"required": [
+				"filename"
+			],
+			"properties": {
+				"filename": {
+					"type": "string",
+					"title": "File name",
+					"description": "File name of the input file, including path; required"
+				},
+				"column-sep": {
+					"type": "string",
+					"title": "Column separator",
+					"description": "Column separator of the input CSV file; default is comma",
+					"default": ","
+				}
+				"index-col": {
+					"type": "string",
+					"title": "Index column",
+					"description": "Column to use as an index - optional"
+				}
+			},
+			"additionalProperties": false
+		},
+		"scen-gen": {
+			"type": "object",
+			"title": "Scenario generatio",
+			"description": "Parameters for the scenario generator",
+			"required": [
+				"nmb-scen", "scen-length"
+			],
+			"properties": {
+				"nmb-scen": {
+					"type": "integer",
+					"minimum": 1,
+					"title": "Number of scenarios",
+					"description": "Number of scenarios for each season; required"
+				},
+				"selector": {
+					"type": "string",
+					"enum": [
+						"optimization",
+						"sampling",
+						"k-means",
+						"Wasserstein"
+					],
+					"title": "Selection method",
+					"description": "scenario-selection method; default='optimization'"
+				},
+				"logfile-base": {
+					"type": "string",
+					"title": "Log file base",
+					"description": "base of the log/output file names for the selector methods; may be overwritten by each selector"
+				},
+				"optimization": {
+					"type": "object",
+					"title": "Optimization",
+					"description": "Parameters for the MIP optimization; the whole section is optional",
+					"properties": {
+						"solver": {
+							"type": "string",
+							"enum": [
+								"xpress",
+								"cplex",
+								"cbc",
+								"glpk",
+								"gurobi",
+								"gams"
+							],
+							"title": "Solver",
+							"description": "MIP solver to be used; default='xpress'"
+						},
+						"use-neos": {
+							"type": "boolean",
+							"title": "Solve using NEOS",
+							"description": "Send the problem to NEOS, instead of solving it locally; default=false"
+						},
+						"logfile-base": {
+							"type": "string",
+							"title": "Log file base",
+							"description": "If specified, solver output will go to '<logfile-base>_<season>.log'"
+						},
+						"solver-output": {
+							"type": "boolean",
+							"title": "Show solver output",
+							"description": "Show solver output on the screen/terminal; default=false"
+						},
+						"max-time": {
+							"type": "number",
+							"title": "Max time [s]",
+							"description": "Maximum time allowed, in seconds; default=300"
+						},
+						"equiprob": {
+							"type": "boolean",
+							"enum": [true],
+							"title": "Equiprobable scenarios",
+							"description": "set to true to fix scenario probabilities to 1/S"
+						},
+						"min-prob": {
+							"type": "number",
+							"title": "Min. probability",
+							"description": "minimal allowed probability"
+						},
+						"max-prob": {
+							"type": "number",
+							"title": "Max. probability",
+							"description": "maximal allowed probability"
+						},
+						"min-rel-prob": {
+							"type": "number",
+							"title": "Min. relative probability",
+							"description": "min probability, as a multiple of 1/S"
+						},
+						"max-rel-prob": {
+							"type": "number",
+							"title": "Min. relative probability",
+							"description": "min probability, as a multiple of 1/S"
+						},
+						"prob-range-mult": {
+							"type": "number",
+							"title": "Probability range multiplier",
+							"description": "probabilities must be between (1/S)/PRM and (1/S)*PRM"
+						},
+						"save-lp-file": {
+							"type": "boolean",
+							"title": "Save LP file",
+							"description": "save the model as an .lp file; default = false",
+							"default": false
+						},
+						"names-in-lp-file": {
+							"type": "boolean",
+							"title": "LP file with names",
+							"description": "use variable and constraint names in the .lp file; default = true",
+							"default": true
+						},
+						"solver-options-num": {
+							"type": "object",
+							"title": "Solver options [number]",
+							"description": "Numerical solver options: will be passed to solver",
+							"additionalProperties": {
+								"type": "number"
+							}
+						},
+						"solver-options-num xpress": {
+							"type": "object",
+							"title": "Xpress options [number]",
+							"description": "Xpress-specific numerical options: will be passed to solver",
+							"additionalProperties": {
+								"type": "number"
+							}
+						},
+						"solver-options-num glpk": {
+							"type": "object",
+							"title": "GLPK options [number]",
+							"description": "GLPK-specific numerical options: will be passed to solver",
+							"additionalProperties": {
+								"type": "number"
+							}
+						},
+						"exp-pwr-as-var": {
+							"type": "boolean",
+							"title": "Expected powers as variables",
+							"description": "if True, E[X^k] and E[XY] are variables; otherwise, they get substituted out",
+							"default": true
+						},
+						"dist-as-var": {
+							"type": "boolean",
+							"title": "Distances as variables",
+							"description": " if True, the total distance is a variable; otherwise it gets substituted out",
+							"default": true
+						},
+						"early-scaling": {
+							"type": "boolean",
+							"title": "Early scaling of distances",
+							"description": "if True, we scale already the expected powers; otherwise, we scale in the objective"
+						}
+					},
+					"oneOf": [
+						{ "required": ["equiprob"] },
+						{ "required": ["min-prob", "max-prob"] },
+						{ "required": ["min-rel-prob", "max-rel-prob"] },
+						{ "required": ["prob-range-mult"] }
+					],
+					"additionalProperties": false
+				},
+				"k-means": {
+					"type": "object",
+					"title": "K-means clustering",
+					"description": "parameters for k-means clustering; the whole section is optional",
+					"properties": {
+						"variant": {
+							"type": "string",
+							"enum": [
+								"standard",
+								"constrained",
+								"same-size"
+							],
+							"title": "K-means variant",
+							"description": "which variant of k-means to use; default='standard'"
+						},
+						"nmb-runs": {
+							"type": "integer",
+							"title": "Number of runs",
+							"description": "how many times should the clustering run (from different start points)",
+							"default": 10
+						},
+						"nmb-threads": {
+							"type": "integer",
+							"title": "Number of threads",
+							"description": "number of parallel threads for the clustering; -1 means one per processor",
+							"default": 1
+						},
+						"max-iter": {
+							"type": "integer",
+							"title": "Max. iterations",
+							"description": "Maximum number of iterations in each run",
+							"default": 300
+						},
+						"equiprob": {
+							"type": "boolean",
+							"title": "Equiprobable scenarios",
+							"description": "set to true to fix scenario probabilities to 1/S",
+							"default": false
+						}
+					}
+				},
+				"sampling": {
+					"type": "object",
+					"title": "Sampling",
+					"description": "parameters for sampling",
+					"properties": {
+						"nmb-samples": {
+							"type": "integer",
+							"title": "Number of samples",
+							"description": "number of samples to test",
+							"default": 1000
+						},
+						"weight-mean": {
+							"type": "number",
+							"title": "Weight of mean",
+							"description": "weight of errors in the means in the distance calculation",
+							"default": 10
+						},
+						"weight-stdev": {
+							"type": "number",
+							"title": "Weight of standard deviation",
+							"description": "weight of errors in the standard deviation in the distance calculation",
+							"default": 5
+						},
+						"weight-skew": {
+							"type": "number",
+							"title": "Weight of skewness",
+							"description": "weight of error in the skewness in the distance calculation",
+							"default": 2
+						},
+						"weight-kurt": {
+							"type": "number",
+							"title": "Weight of kurtosis",
+							"description": "weight of error in the kurtosis in the distance calculation",
+							"default": 1
+						},
+						"weight-corr": {
+							"type": "number",
+							"title": "Weight of correlatins",
+							"description": "weight of error in the correlations in the distance calculation",
+							"default": 2
+						},
+						"show-progress": {
+							"type": "boolean",
+							"title": "Show progress",
+							"description": "print best-sample progression to the output stream",
+							"default": true
+						}
+					}
+				}
+			},
+			"additionalProperties": false
+		},
+		"output": {
+			"type": "object",
+			"title": "Output file",
+			"description": "Specifications for the output",
+			"required": [
+				"filename-base"
+			],
+			"properties": {
+				"filename-base": {
+					"type": "string",
+					"title": "Output file name without extension",
+					"description": "Output file will be '<filename-base>.csv'; required"
+				},
+				"store-scen-stat": {
+					"type": "boolean",
+					"title": "Store output statistics",
+					"description": "If true, store the scenarios statistics; default = false",
+					"default": false
+				},
+				"error-plot_png": {
+					"type": "boolean",
+					"title": "Make error plots as png",
+					"description": "If true, generate error plots and save them as png"
+				},
+				"error-plot_pdf": {
+					"type": "boolean",
+					"title": "Make error plots as df",
+					"description": "If true, generate error plots and save them as pdf"
+				},
+				"save-raw-output": {
+					"type": "boolean",
+					"title": "Save raw data",
+					"description": "If true, save the raw scenario data as csv, per season",
+					"default": false
+				}
+			},
+			"additionalProperties": false
+		}
+	}
+}
