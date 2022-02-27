@@ -1,0 +1,265 @@
+model portfolio_opt
+	
+uses 'nlsolv', 'mmetc', 'mmsheet', 'mmsystem'!, 'mmodbc', 'mmxml'
+options noautofinal, noimplicit, keepassert
+	
+parameters
+	Alpha = 0.05	! CVaR quantile
+	RiskW = 0.2  	! weight of CVaR in the objective
+	ScenFile = ''
+	Budget = 1000
+	AllowCash = false
+	MaxWeight = .25
+	
+	ColSep = ','
+	SolFile = ''
+	IndexCol = ''
+	ProbCol = ''
+	
+	Solver = ''  ! required!
+	SolverPath = ''
+	SolverOptions = ''
+	
+	EvalSolFile = ''
+	EvalResFile = ''
+end-parameters
+
+forward procedure read_scen_data
+forward procedure read_eval_sol
+
+declarations
+	SCENS: set of string
+	ASSETS: set of string
+	
+	Return: array(ASSETS, SCENS) of real
+	Prob: array(SCENS) of real
+	
+	EvalMode: boolean
+end-declarations
+
+read_scen_data
+
+(!
+writeln
+writeln('ASSETS = ', ASSETS)
+writeln('SCENS = ', SCENS)
+!)
+	
+declarations
+	buy: array(ASSETS) of mpvar
+	cash: mpvar
+	profit: array(SCENS) of mpvar
+	
+	pvar: mpvar  ! VaR of the profit
+	short: array(SCENS) of mpvar  ! shortfall bellow VaR
+	cvar: mpvar
+
+	C_budget: linctr
+	C_maxbuy: array(ASSETS) of linctr
+	C_profit: array(SCENS) of linctr
+	C_no_cash: linctr
+	
+	obj: linctr
+end-declarations
+
+forall(s in SCENS)
+	profit(s) is_free
+pvar is_free
+cvar is_free
+
+! ----------------------------------------------
+
+C_budget := cash = Budget - sum(n in ASSETS) buy(n)  ! implies sum(n in ASSETS) buy(n) <= Budget!
+
+if MaxWeight < 1 then
+	forall(n in ASSETS)
+		C_maxbuy(n) := buy(n) <= MaxWeight * Budget
+end-if
+
+forall(s in SCENS) do
+	C_profit(s) :=
+		profit(s) = cash + sum(n in ASSETS) buy(n) * (1 + Return(n, s)) - Budget
+	
+	short(s) >= pvar - profit(s)  ! positive if profit < pvar
+end-do
+
+cvar = pvar - 1 / Alpha * sum(s in SCENS) Prob(s) * short(s)
+
+if not AllowCash then
+	cash = 0
+end-if
+
+obj := (1 - RiskW) * sum(s in SCENS) Prob(s) * profit(s) + RiskW * cvar
+
+! ----------------------------------------------
+
+declarations
+	solBuy: array(ASSETS) of real
+	
+	SOL_VALS: set of string
+	inSampleVals: array(SOL_VALS) of real  ! in-sample solution values
+end-declarations
+if EvalSolFile <> '' then
+	! evaluating solution
+	EvalMode := true
+	read_eval_sol
+	! fix the solution
+	forall(n in ASSETS)
+		buy(n) = solBuy(n)
+else
+	EvalMode := false
+end-if
+
+! ----------------------------------------------
+
+! Configuration of the solver
+setparam("nl_verbose", true)
+setparam("nl_solver", Solver)
+if SolverPath <> '' then
+	setparam("nl_solverpath", SolverPath)
+end-if
+if SolverOptions <> "" then
+	setparam("nl_options", SolverOptions)
+end-if
+maximize(obj)
+writeln
+
+declarations
+	expProfit: real
+end-declarations
+expProfit := sum(s in SCENS) Prob(s) * profit(s).sol
+
+writeln(" opt. obj = ", obj.sol)
+writeln("E[profit] = ", expProfit)
+writeln("     CVaR = ", cvar.sol)
+
+! ----------------------------------------------
+
+declarations
+	solFileNameList: list of text
+	solFileName: string
+end-declarations
+
+if EvalMode then
+	if EvalResFile <> '' then
+		fopen(EvalResFile, F_OUTPUT + F_APPEND)
+	end-if
+	writeln(EvalSolFile, '	', inSampleVals('obj_f'), '	', inSampleVals('exp_v'), '	', inSampleVals('cvar'), '	', obj.sol, '	', expProfit, '	', cvar.sol)
+	fclose(F_OUTPUT)
+else
+	forall(n in ASSETS)
+		writeln("   buy(", n, ") = ", buy(n).sol)
+
+	if SolFile <> '' then
+		solFileName := SolFile
+	else
+		! split ScenFile into two parts, on the last '.'
+		solFileNameList := splittext(ScenFile, '.', -2)
+		solFileName := string(solFileNameList(1)) + '.sol'
+	end-if
+	
+	fopen(solFileName, F_OUTPUT)
+		forall(n in ASSETS)
+			writeln(n, '	', buy(n).sol)
+		writeln
+		writeln('obj_f	', obj.sol)
+		writeln('exp_v	', expProfit)
+		writeln('cvar	', cvar.sol)
+	fclose(F_OUTPUT)
+end-if
+
+! ----------------------------------------------
+
+procedure read_scen_data
+	declarations
+		FileSpec: string
+		Header: set of string
+		ASSETSCols: string
+		DataDim: list of integer
+		ReturnT: array(SCENS, ASSETS) of real  ! transposed
+		nScens: integer
+	end-declarations
+	
+	assert(ScenFile <> '', "ScenFile must be specified!")
+	if ColSep = 'tab' then
+		FileSpec := 'mmsheet.csv:fsep=	:' + ScenFile
+	else
+		FileSpec := 'mmsheet.csv:fsep=' + ColSep + ':' + ScenFile
+	end-if
+	
+	initializations from FileSpec
+		Header as '[1:1]'
+	end-initializations
+
+	if IndexCol <> '' and IndexCol in Header then
+		! we have a column with scenario index
+		Header -= {IndexCol}
+		initializations from FileSpec
+			SCENS as 'skiph;noindex;[](' + IndexCol + ')'
+		end-initializations
+		nScens := SCENS.size
+	else	
+		! -> have to find out the number of scenarios
+		initializations from FileSpec
+			DataDim as 'rangesize;[]'
+		end-initializations
+		! now, DataDim(1) is the number of rows, including the header
+		nScens := DataDim(1)-1
+		SCENS := union(s in 1 .. nScens) {string(s)}
+	end-if	
+	
+	if ProbCol <> '' and ProbCol in Header then
+		! there is a column with probabilities
+		Header -= {ProbCol}
+		! read the probabilities, without index
+		initializations from FileSpec
+			Prob as 'skiph;noindex;[](' + ProbCol + ')'
+		end-initializations
+	else	
+		! we have to construct the probabilities
+		forall(s in SCENS)
+			Prob(s) := 1 / nScens
+	end-if
+
+	ASSETS := Header
+	
+	! read demand, by explicitely stating the column names
+	! NB: it is transposed in the data file!
+	forall(n in ASSETS)
+		ASSETSCols += n + ','
+	ASSETSCols -= ','  ! remove the trailing ','
+	initializations from FileSpec
+		ReturnT as 'skiph;noindex;[](' + ASSETSCols + ')'
+	end-initializations
+	
+	forall(s in SCENS, n in ASSETS) do
+		Return(n, s) := ReturnT(s, n)
+	end-do
+
+	finalize(ASSETS)
+	finalize(SCENS)
+end-procedure
+
+
+procedure read_eval_sol
+	declarations
+		solRange: string
+	end-declarations
+	! read the solution - one value per line
+	solRange := '[R1C1:R' + ASSETS.size + 'C2]'
+	initializations from 'mmsheet.csv:fsep=	:' + EvalSolFile
+		solBuy as solRange
+	end-initializations
+
+	! read the in-sample solution parameters
+	solRange := '[R' + (ASSETS.size + 2) + 'C1:R' + (ASSETS.size + 5) + 'C2]'
+	initializations from 'mmsheet.csv:fsep=	:' + EvalSolFile
+		inSampleVals as solRange
+	end-initializations
+	if (not 'obj_f' in SOL_VALS) or (not 'cvar' in SOL_VALS) then
+		writeln("ERROR: missing in-sample values in the solution file!")
+		exit(1)
+	end-if
+end-procedure
+
+end-model
