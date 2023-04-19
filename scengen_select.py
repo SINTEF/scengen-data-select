@@ -101,7 +101,7 @@ def main():
 	parser.add_argument("--index-col", help="name of the index column")
 	parser.add_argument("--col-sep", help="column separator in the input data file")
 	parser.add_argument("-s", "--nmb-scen", type=int, help="number of scenarios to generate")
-	parser.add_argument("-m", "--method", choices=['optimization', 'k-means', 'sampling', 'Wasserstein', 'sampling-WD'], metavar="SELECTOR", help="selector method")
+	parser.add_argument("-m", "--method", choices=['optimization', 'k-means', 'sampling', 'Wasserstein', 'sampling-WD', 'scen-red'], metavar="SELECTOR", help="selector method")
 	parser.add_argument("-o", "--output", help="output file name, without extension")
 	parser.add_argument("-T", "--max-time", type=int, help="time limit for the optimization method [s]")
 	# using two flags (--equiprob and --freeprob) for the same value (with oposite meaning)
@@ -128,7 +128,7 @@ def main():
 		# - also add default values required to run
 		params = dict()
 		params['scen-gen'] = dict()
-		for m in {'optimization', 'k-means', 'sampling', 'Wasserstein','sampling-WD'}:
+		for m in {'optimization', 'k-means', 'sampling', 'Wasserstein','sampling-WD','scen-red'}:
 			params['scen-gen'][m.lower()] = dict()
 		params['scen-gen']['optimization']['prob-range-mult'] = np.sqrt(10)
 		params['input'] = dict()
@@ -211,8 +211,14 @@ def main():
 		from scen_select_Wasserstein import SelectByWasserstein
 		selector = SelectByWasserstein(parSG)
 	elif selectorType == 'sampling-WD':
-		from scen_select_sampling_WD_xpr import SelectBySamplingWD
+		from scen_select_sampling_WD import SelectBySamplingWD
 		selector = SelectBySamplingWD(parSG)
+	elif selectorType == 'scen-red':
+		from scen_select_scenred import SelectByScenRed
+		selector = SelectByScenRed(parSG)
+	elif selectorType == 'k-medoids':
+		from scen_select_kmedoids import SelectByKMedoids
+		selector = SelectByKMedoids(parSG)
 	else:
 		assert False, f"unsupported selector type '{selectorType}'"
 

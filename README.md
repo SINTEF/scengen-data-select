@@ -1,7 +1,7 @@
 Scenario-generation by selection from historical data
 =====================================================
 
-Python implementation of scenario-generation methods described in paper __Scenario generation by selection from historical data__, published in _Computational Management Science_, volume 18, pages 411–429 (2021); [DOI: 10.1007/s10287-021-00399-4](https://doi.org/10.1007/s10287-021-00399-4).
+Python implementation of scenario-generation methods described in paper __Scenario generation by selection from historical data__, published in _Computational Management Science_, volume 18, pages 411ï¿½429 (2021); [DOI: 10.1007/s10287-021-00399-4](https://doi.org/10.1007/s10287-021-00399-4).
 
 This includes two interfaces, one for the TIMES energy-system model and one generic, using csv files as input and output.
 
@@ -43,13 +43,21 @@ Files
 	- selector using the "iterative sampling" approach, with moment-based metric for evaluation
 - `scen_select_sampling_WD.py`
 	- selector using the "iterative sampling" approach, with Wasserstein-based metric for evaluation
-	- uses Pyomo for evaluation of the metric
-- `scengen_mod_Wasserstein.py`
-	- Pyomo model used from `scen_select_sampling_WD.py`
-- `scen_select_sampling_WD_xpr.py`
-	- variant of `scen_select_sampling_WD.py` using Xpress Python library, instead of Pyomo
-- `scengen_mod_Wasserstein_xpr.py`
-	- Xpress model used from `scen_select_sampling_WD_xpr.py`
+	- computes the distance using the analytical formula from Section 3.4 of the paper
 - `scen_select_Wasserstein.py`
 	- selector minimizing the Wasserstein distance, using a heuristic
 
+### Alternative implementations of the Wasserstein distance
+
+Originally, the algorithm used an optimization model to evaluate the Wasserstein distances.
+While this is no longer in use (since the analytical formula is simpler and faster), we keep the files here just in case.
+The model was implemented in Pyomo and in Xpress Python libraries.
+
+- `scen_select_sampling_WD_xpr.py`
+	- variant of `scen_select_sampling_WD.py` using optimization with Xpress Python library
+- `scengen_mod_Wasserstein_xpr.py`
+	- Xpress model used from `scen_select_sampling_WD_xpr.py`
+- `scen_select_sampling_WD_pyomo.py`
+	- variant of `scen_select_sampling_WD.py` using optimization with Pyomo
+- `scengen_mod_Wasserstein_pyomo.py`
+	- Pyomo model used from `scen_select_sampling_WD_pyomo.py`

@@ -59,7 +59,7 @@ class SelectBySamplingWD(sgc.SelectorBase):
 		this runs the selection method
 
 		arguments:
-		- df = data frame with the data series; must have an index called Date
+		- df = data frame with the data series; its index is used to identify the selection
 		- nScen = number of scenarios/sequences to select (if different from self._nmbScen)
 		"""
 		if nScen == None:
@@ -106,6 +106,7 @@ class SelectBySamplingWD(sgc.SelectorBase):
 
 			if dist < minDist:
 				bestSel = scDays.copy()  # OBS: without copy, we would get a reference!
+				bestScenProb = self._mod.getSolution(self._pVars)
 				if self._showProgress:
 					print(f" - new best sample: iter = {i+1:{nDigits}d}, dist = {dist:.3f}")
 				minDist = dist
@@ -120,8 +121,7 @@ class SelectBySamplingWD(sgc.SelectorBase):
 		
 		# create the output dictionary
 		if self._free_prob:
-			scProb = self._mod.getSolution(self._pVars)
-			resProb = { d : scProb[s] for s,d in enumerate(bestSel)}
+			resProb = { d : bestScenProb[s] for s,d in enumerate(bestSel)}
 		else:
 			resProb = { d : 1/nScen for d in bestSel }
 

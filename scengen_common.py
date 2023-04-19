@@ -61,12 +61,12 @@ class SelectorBase(ABC):
 		- abstract method, so all derived methods have to implement it
 
 		arguments:
-		- df = data frame with the data series; must have an index called Date
+		- df = data frame with the data series; its index is used to identify the selection
 		- season = name of the season - used for output
 		- nScen = number of scenarios/sequences to select (if different from self._nmbScen)
 
 		returns:
-		- dictionary Date->probability for the selected dates
+		- dictionary index->probability for the selected value
 			- must include exactly nScen items
 			- empty dictionary is used to denote failure
 		- return status, as a string

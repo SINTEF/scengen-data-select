@@ -57,7 +57,7 @@
 		},
 		"scen-gen": {
 			"type": "object",
-			"title": "Scenario generatio",
+			"title": "Scenario generation",
 			"description": "Parameters for the scenario generator",
 			"required": [
 				"nmb-scen", "scen-length"
@@ -108,6 +108,7 @@
 						"optimization",
 						"sampling",
 						"k-means",
+						"k-medoids",
 						"Wasserstein"
 					],
 					"title": "Selection method",
@@ -287,6 +288,39 @@
 							"title": "Max. iterations",
 							"description": "Maximum number of iterations in each run",
 							"default": 300
+						},
+						"equiprob": {
+							"type": "boolean",
+							"title": "Equiprobable scenarios",
+							"description": "set to true to fix scenario probabilities to 1/S",
+							"default": false
+						}
+					}
+				},
+				"k-medoids": {
+					"type": "object",
+					"title": "K-medoids clustering",
+					"description": "parameters for k-means clustering; the whole section is optional",
+					"properties": {
+						"max-iter": {
+							"type": "integer",
+							"title": "Max. iterations",
+							"description": "Maximum number of iterations in each run",
+							"default": 300
+						},
+						"method": {
+							"type": "string",
+							"title": "Method/algorithm to use",
+							"description": "Which algorithm to use. ‘alternate’ is faster while ‘pam’ is more accurate",
+							"enum": ["alternate", "pam"],
+							"default": "alternate"
+						},
+						"init": {
+							"type": "string",
+							"title": "Medoid initialization method",
+							"description": "See documentation for information about the different methods",
+							"enum": ["random", "heuristic", "k-medoids++", "build"],
+							"default": "build"
 						},
 						"equiprob": {
 							"type": "boolean",

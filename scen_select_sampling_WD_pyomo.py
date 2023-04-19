@@ -1,7 +1,7 @@
 # scenario selection iterative sampling, with scenarios evaluated
 # using Wasserstein distance from the data
 
-from scengen_mod_Wasserstein import build_model
+from scengen_mod_Wasserstein_pyomo import build_model
 import scengen_common as sgc
 
 import math
@@ -62,7 +62,7 @@ class SelectBySamplingWD(sgc.SelectorBase):
 		this runs the selection method
 
 		arguments:
-		- df = data frame with the data series; must have an index called Date
+		- df = data frame with the data series; its index is used to identify the selection
 		- nScen = number of scenarios/sequences to select (if different from self._nmbScen)
 		"""
 		if nScen == None:

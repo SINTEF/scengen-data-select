@@ -1,0 +1,11 @@
+# required packages
+scipy
+numpy
+pandas
+scikit-learn
+scikit-learn-extra
+matplotlib
+pyomo
+
+# optional packages (for optional/deprecated files)
+#xpress

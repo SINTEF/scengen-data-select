@@ -99,7 +99,7 @@ class SelectByOptimize(sgc.SelectorBase):
 		this runs the selection method
 
 		arguments:
-		- df = data frame with the data series; must have an index called Date
+		- df = data frame with the data series; its index is used to identify the selection
 		- nScen = number of scenarios/sequences to select (if different from self._nmbScen)
 		"""
 		if nScen == None:
