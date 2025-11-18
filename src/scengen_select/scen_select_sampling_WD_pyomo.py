@@ -1,8 +1,8 @@
 # scenario selection iterative sampling, with scenarios evaluated
 # using Wasserstein distance from the data
 
-from scengen_mod_Wasserstein_pyomo import build_model
-import scengen_common as sgc
+from .scengen_mod_Wasserstein_pyomo import build_model
+from . import scengen_common as sgc
 
 import math
 import pandas as pd

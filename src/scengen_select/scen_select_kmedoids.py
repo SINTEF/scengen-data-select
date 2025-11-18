@@ -7,7 +7,7 @@ API documentation: https://scikit-learn-extra.readthedocs.io/en/latest/generated
 TODO: replace it by k-Medoids from https://python-kmedoids.readthedocs.io - should be faster!
 """
 
-import scengen_common as sgc
+from . import scengen_common as sgc
 
 import pandas as pd
 import numpy as np

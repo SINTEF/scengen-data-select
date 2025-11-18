@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+dynamic = ["version"]
+name = "scengen-data-select"
+description = "several methods for scenario generation by data selection"
+readme = "README.md"
+requires-python = ">=3.10, <3.13"
+license = {file = "LICENSE"}
+authors = [
+	{name = "Michal Kaut", email = "Michal.Kaut@sintef.no"}
+]
+
+dependencies = [
+	"numpy<2.0",  # numpy 2.0 breals scikit-learn-extra
+	"scipy",
+	"pandas",
+	"scikit-learn",
+	"scikit-learn-extra",
+	"matplotlib",
+	"pyomo"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/SINTEF/scengen-data-select/"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "_version.py"
+
+#[tool.hatch.build]
+#include = [
+#	"examples/*"
+#]
+
+#[tool.hatch.build.targets.sdist]
+#exclude = []
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scengen_select"]
+
+[project.scripts]
+scengen-select = "scengen_select.scripts.scengen_select:main"
+scengen-times = "scengen_select.scripts.scengen_times:main"

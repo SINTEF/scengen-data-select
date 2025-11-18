@@ -1,6 +1,0 @@
-# ignore patterns for this example
-prices/*
-scens/*
-*.sol
-*.png
-*.csv

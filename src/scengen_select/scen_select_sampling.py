@@ -1,7 +1,7 @@
 # scenario selection iterative sampling, with scenarios evaluated
 # using distance in moments and correlations
 
-import scengen_common as sgc
+from . import scengen_common as sgc
 
 import math
 import pandas as pd

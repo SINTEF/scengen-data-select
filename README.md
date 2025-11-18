@@ -8,10 +8,22 @@ This includes two interfaces, one for the TIMES energy-system model and one gene
 Python setup
 ------------
 
-At the moment, this repo does not provide an installable package, only two scripts together with supporting files.
-All required packages are given in `requirements.txt`, installable with `pip install -r requirements.txt`.
+The package can be installed directly from its repository,
+using HTTPs:
+```console
+pip install git+https://github.com/SINTEF/scengen-data-select
+```
+or SSH:
+```console
+pip install git+ssh://git@github.com/SINTEF/scengen-data-select.git
+```
+Note that the latter requires SSH key registered for you github account.
 
-__NB:__ To use the the optimization method, one needs to install a solver with python binding and then specify the solver as an argument to the script. Some of the python bindings are listed in `requirements.txt`, but are commented out by default.
+__NB:__ To use the the optimization method, one needs to install a solver with python binding and then specify the solver as an argument to the script. These include:
+
+- `highspy` for HiGHS
+- `xpress` for FICO Xpress
+
 
 ### Problems with 'scikit-learn-extra'
 
@@ -25,15 +37,17 @@ If the problem does not get resolved, we should consider switching to an alterna
 Files
 ----
 
-### Main scripts
+### Main executables
 
-- `scengen_select.py`
+When installed the package provides two executables:
+
+- `scengen-select`
 	- script implementing a generic interface
 	- accepts command-line arguments, run with `--help` for an overview
 	- in addition, all options can be specified in a JSON configuration file,
 	  following the schema from `scen-gen_select.schema.json`
 
-- `scengen_times.py`
+- `scengen-times`
 	- script implementing interface for TIMES and Empire energy-optimization models
 	- all input data can be specified in a JSON configuration file
 	  following the schema from `scen-gen_times.schema.json`

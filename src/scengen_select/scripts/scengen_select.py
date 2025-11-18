@@ -2,7 +2,14 @@
 # - algorithm from https://doi.org/10.1007/s10287-021-00399-4
 # - this is a generic version, with simple matrix-based input/output
 
-import scengen_common as sgc
+# TODO:
+# - replace print statements with logger calls
+# - move read_config to scengen_common or a new file
+#   - also test schema validation
+# - allow automatic separator detection (like pandas.read_csv with sep=None)
+# - allow auto-detection of index column? (for ex. assuming it is the first one?)
+
+import scengen_select.scengen_common as sgc
 
 import os
 import sys
@@ -39,7 +46,7 @@ def read_config(configFile: str) -> dict:
 			params = json.load(f)
 	except IOError as err:
 		print("Error: could not open the configuration file {}:\n - {}".format(configFile, err))
-		exit(1)
+		sys.exit(1)
 	except Exception as err:
 		print("Error parsing the configuration file {}:\n - {}".format(configFile, err))
 
@@ -52,14 +59,14 @@ def read_config(configFile: str) -> dict:
 				schema = json.load(f)
 		except Exception as err:
 			print("Error parsing the json schema file {}:\n - {}".format(configFile, err))
-			exit(1)
+			sys.exit(1)
 		import jsonschema
 		try:
 			jsonschema.validate(params, schema)
 		except jsonschema.exceptions.ValidationError as err:
 			print("Error: the configuration file {} does not validate against the schema from {}:\n - {}\n - {}".format(\
 				configFile, schemaFile, err.message, err.path))
-			exit(2)
+			sys.exit(2)
 
 	return params
 
@@ -118,6 +125,11 @@ def main():
 
 	# parsing
 	args = parser.parse_args()
+
+	if args.config is None and (args.method is None or args.data is None):
+		logger.error("At least a configuration file or the input data and generation method must be given!\n")
+		parser.print_help()
+		sys.exit(1)
 
 	configFile = args.config
 
@@ -181,46 +193,49 @@ def main():
 
 	selectorType = parSG.get('selector', 'optimization')
 	print(f"Initializing selector object of type '{selectorType}'.")
-	if selectorType == 'optimization':
-		if 'optimization' not in parSG:
-			# add default values
-			parSG['optimization'] = {
-				'prob-range-mult': np.sqrt(10)
-			}
-		from scen_select_optimize import SelectByOptimize
-		selector = SelectByOptimize(parSG)
-	elif selectorType == 'k-means':
-		kMeansVariant = 'standard'
-		if 'k-means' in parSG:
-			kMeansVariant = parSG['k-means'].get('variant', 'standard')
-		if kMeansVariant == 'standard':
-			from scen_select_kmeans import SelectByKMeans
-			selector = SelectByKMeans(parSG)
-		elif kMeansVariant == 'constrained':
-			from scen_select_kmeans_constrained import SelectByCKMeans
-			selector = SelectByCKMeans(parSG)
-		elif kMeansVariant == 'same-size':
-			from scen_select_kmeans_samesize import SelectBySSKMeans
-			selector = SelectBySSKMeans(parSG)
-		else:
-			assert False, f"unsupported k-means variant '{kMeansVariant}'"
-	elif selectorType == 'sampling':
-		from scen_select_sampling import SelectBySampling
-		selector = SelectBySampling(parSG)
-	elif selectorType == 'Wasserstein':
-		from scen_select_Wasserstein import SelectByWasserstein
-		selector = SelectByWasserstein(parSG)
-	elif selectorType == 'sampling-WD':
-		from scen_select_sampling_WD import SelectBySamplingWD
-		selector = SelectBySamplingWD(parSG)
-	elif selectorType == 'scen-red':
-		from scen_select_scenred import SelectByScenRed
-		selector = SelectByScenRed(parSG)
-	elif selectorType == 'k-medoids':
-		from scen_select_kmedoids import SelectByKMedoids
-		selector = SelectByKMedoids(parSG)
-	else:
-		assert False, f"unsupported selector type '{selectorType}'"
+	
+	match selectorType:
+		case 'optimization':
+			if 'optimization' not in parSG:
+				# add default values
+				parSG['optimization'] = {
+					'prob-range-mult': np.sqrt(10)
+				}
+			from scengen_select.scen_select_optimize import SelectByOptimize
+			selector = SelectByOptimize(parSG)
+		case 'k-means':
+			kMeansVariant = 'standard'
+			if 'k-means' in parSG:
+				kMeansVariant = parSG['k-means'].get('variant', 'standard')
+			match kMeansVariant:
+				case 'standard':
+					from scengen_select.scen_select_kmeans import SelectByKMeans
+					selector = SelectByKMeans(parSG)
+				case 'constrained':
+					from scengen_select.scen_select_kmeans_constrained import SelectByCKMeans
+					selector = SelectByCKMeans(parSG)
+				case 'same-size':
+					from scengen_select.scen_select_kmeans_samesize import SelectBySSKMeans
+					selector = SelectBySSKMeans(parSG)
+				case _:
+					assert False, f"unsupported k-means variant '{kMeansVariant}' - should never happen!"
+		case 'sampling':
+			from scengen_select.scen_select_sampling import SelectBySampling
+			selector = SelectBySampling(parSG)
+		case 'Wasserstein':
+			from scengen_select.scen_select_Wasserstein import SelectByWasserstein
+			selector = SelectByWasserstein(parSG)
+		case 'sampling-WD':
+			from scengen_select.scen_select_sampling_WD_pyomo import SelectBySamplingWD
+			selector = SelectBySamplingWD(parSG)
+		case 'scen-red':
+			from scengen_select.scen_select_scenred import SelectByScenRed
+			selector = SelectByScenRed(parSG)
+		case 'k-medoids':
+			from scengen_select.scen_select_kmedoids import SelectByKMedoids
+			selector = SelectByKMedoids(parSG)
+		case _:
+			assert False, f"unsupported selector type '{selectorType}' - should never happen!"
 
 	parOut = params['output'] # type: dict
 	outFileBase = parOut['filename-base']
@@ -231,7 +246,7 @@ def main():
 	if len(resProb) == 0:
 		# no results!
 		print(f" - selection failed, status = {resStatus}")
-		exit(1)
+		sys.exit(1)
 	print(f" - selection finished in {timer() - tStart:.1f} s")
 	print(f" - returned status: {resStatus}")
 
@@ -240,7 +255,7 @@ def main():
 		print(f"nScen = {nScen}")
 		print(f"len(resProb) = {len(resProb)}")
 		print(f"resProb = {resProb}")
-		exit(1)
+		sys.exit(1)
 
 	# filter df by index: https://stackoverflow.com/a/45040370/842693
 	# - note: in case of multiindex: https://stackoverflow.com/a/25225009/842693
@@ -248,7 +263,7 @@ def main():
 	dSel = df[df.index.isin(resProb.keys())].copy()
 	if len(dSel) != nScen:
 		print(" - ERROR: wrong number of non-zero probabilities returned -> aborting!")
-		exit(1)
+		sys.exit(1)
 	
 	# add the column of probabilities, if required
 	if writeProb:

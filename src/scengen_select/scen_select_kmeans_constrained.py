@@ -3,9 +3,9 @@ scenario selection using "constrained k-means" algorithm from
 https://adared.ch/constrained-k-means-implementation-in-python/
 """
 
-import scengen_common as sgc
+from . import scengen_common as sgc
 
-from third_party.constrained_kmeans.constrained_kmeans import constrained_kmeans
+from .third_party.constrained_kmeans.constrained_kmeans import constrained_kmeans
 import pandas as pd
 import numpy as np
 import logging

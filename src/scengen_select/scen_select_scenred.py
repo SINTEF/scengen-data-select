@@ -2,7 +2,7 @@
 # the scenario-reduction method
 # Algorithm 2.4 from Heitsch & Römisch (2015)
 
-import scengen_common as sgc
+from . import scengen_common as sgc
 
 import math
 import pandas as pd

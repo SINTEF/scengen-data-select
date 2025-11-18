@@ -7,11 +7,11 @@
 # - problem: it is based on an old version of sklearn!
 #   -> the original version does not work, this fork does, but with warnings
 
-import scengen_common as sgc
+from . import scengen_common as sgc
 
 import pandas as pd
 import numpy as np
-from third_party.samesize_kmeans.clustering.equal_groups import EqualGroupsKMeans
+from .third_party.samesize_kmeans.clustering.equal_groups import EqualGroupsKMeans
 import logging
 logger = logging.getLogger(__name__)
 

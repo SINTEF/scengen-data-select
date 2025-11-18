@@ -1,6 +1,6 @@
 # scenario selection using k-means clustering algorithm from sklearn
 
-import scengen_common as sgc
+from . import scengen_common as sgc
 
 import pandas as pd
 import numpy as np

@@ -3,8 +3,8 @@
 #
 # this version uses minimization via Xpress Python library
 
-from scengen_mod_Wasserstein_xpr import build_model
-import scengen_common as sgc
+from .scengen_mod_Wasserstein_xpr import build_model
+from . import scengen_common as sgc
 
 import math
 import pandas as pd

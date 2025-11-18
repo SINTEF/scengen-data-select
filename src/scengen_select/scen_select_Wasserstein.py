@@ -1,7 +1,7 @@
 # scenario selection using the Wassertein-metric based algorithm from
 # Pflug & Pichler (2015)
 
-import scengen_common as sgc
+from . import scengen_common as sgc
 
 import math
 import pandas as pd

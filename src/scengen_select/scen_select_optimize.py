@@ -1,6 +1,6 @@
 # scenario selection using MIP optimization with Pyomo
 
-import scengen_common as sgc
+from . import scengen_common as sgc
 
 import pyomo.environ as pyo
 import pandas as pd
@@ -57,9 +57,9 @@ class SelectByOptimize(sgc.SelectorBase):
 	
 		# create the abstract model
 		if self._Equiprob:
-			from scengen_mod_equiprob import build_model
+			from .scengen_mod_equiprob import build_model
 		else:
-			from scengen_mod import build_model
+			from .scengen_mod import build_model
 		self._m = build_model(EPwrAsVar, DistAsVar, ScaleVars)
 
 		# initialize solver manager (so we can use NEOS)
