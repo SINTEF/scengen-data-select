@@ -5,6 +5,23 @@ Python implementation of scenario-generation methods described in paper __Scenar
 
 This includes two interfaces, one for the TIMES energy-system model and one generic, using csv files as input and output.
 
+Python setup
+------------
+
+At the moment, this repo does not provide an installable package, only two scripts together with supporting files.
+All required packages are given in `requirements.txt`, installable with `pip install -r requirements.txt`.
+
+__NB:__ To use the the optimization method, one needs to install a solver with python binding and then specify the solver as an argument to the script. Some of the python bindings are listed in `requirements.txt`, but are commented out by default.
+
+### Problems with 'scikit-learn-extra'
+
+As per November 2025, the 'scikit-learn-extra' package does not work with recent python and/or numpy >= 2.0.
+For this reason, we require numpy 1.x and recommend python <= 3.12. (Python 3.13 did not work, at least not on linux.)
+Note that we use this package only for the 'k-medoids' method - so one could install without it if one does not need k-medoids.
+
+If the problem does not get resolved, we should consider switching to an alternative implementation, such as [kmedoids](https://pypi.org/project/kmedoids/).
+
+
 Files
 ----
 

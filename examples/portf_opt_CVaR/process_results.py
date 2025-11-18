@@ -34,6 +34,7 @@ res_file = args.eval_res_dir + '/' + args.input_file
 
 optSolFiles = glob.glob(args.ref_sol_dir + '/' + args.mask)
 sdf = pd.DataFrame()
+dfRows = []
 for file in optSolFiles:
 	dfRow = {'sol-file': os.path.basename(file)}
 	with open(file, 'r') as f:
@@ -42,7 +43,8 @@ for file in optSolFiles:
 				kw = l.split()[0]
 				if kw in {'obj_f', 'exp_v', 'cvar'}:
 					dfRow[kw] = float(l.split()[1])
-	sdf = sdf.append(dfRow, ignore_index=True)
+	dfRows.append(dfRow)
+sdf = pd.DataFrame(dfRows)
 
 # add columns based on 'sol-file'
 # example value: case_1w_all_10_opt_w0.5.sol
@@ -112,7 +114,7 @@ for sgm in sgMethods:
 	# solFiles = set(dfm['opt-sol-file'])
 	# sdfm = sdf[sdf['sol-file'].isin(solFiles)]
 	# sdfm.plot(ax=ax, x='cvar', y='exp_v',
-	#           kind='scatter', marker='X', s=50, edgecolor='darkred',
+	#           kind='scatter', marker='X', s=50, #edgecolor='darkred',
 	#           c='risk-weight', colormap='viridis', colorbar=False)
 
 	ax.set_xlabel('CVaR')
@@ -149,7 +151,7 @@ for d in set(df['dim']):
 		solFiles = set(dfm['opt-sol-file'])
 		sdfm = sdf[sdf['sol-file'].isin(solFiles)]
 		sdfm.plot(ax=ax, x='cvar', y='exp_v',
-		          kind='scatter', marker='x', s=50, edgecolor='darkred',
+		          kind='scatter', marker='x', s=50, #edgecolor='darkred',
 		          c='risk-weight', colormap='viridis', colorbar=False)
 
 		ax.set_xlabel('CVaR')

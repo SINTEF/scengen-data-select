@@ -1,11 +1,12 @@
 # required packages
+numpy<2.0
 scipy
-numpy
 pandas
 scikit-learn
 scikit-learn-extra
 matplotlib
 pyomo
 
-# optional packages (for optional/deprecated files)
-#xpress
+# solver packages - choose at least one or add your own
+#highspy  # for HiGHS
+#xpress   # for FICO Xpress

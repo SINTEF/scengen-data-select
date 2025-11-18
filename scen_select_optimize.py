@@ -17,7 +17,7 @@ class SelectByOptimize(sgc.SelectorBase):
 		
 		# method-specific parameters from parSG (which comes from a json file)
 		parOpt = parSG.get('optimization', dict()) # type: dict
-		solver = parOpt.get('solver', 'xpress')
+		solver = parOpt.get('solver', 'highs')
 		self._logFileBase = parOpt.get('logfile-base', '')
 		self._showOutput = parOpt.get('solver-output', False)
 		self._maxTime = parOpt.get('max-time', 300)  # default is 5 minut
@@ -71,12 +71,12 @@ class SelectByOptimize(sgc.SelectorBase):
 		# initialize the solver
 		if solver == 'xpress':
 			# xpress needs 'is_mip=True' to solve it as a mip!?
-			opt = pyo.SolverFactory(solver, solver_io='lp', is_mip=True)
+			opt = pyo.SolverFactory(solver, solver_io='python', is_mip=True)
 		else:
 			opt = pyo.SolverFactory(solver)
 
 		# solver options
-		MaxTimeKey = {"xpress": "maxtime", "cplex": "timelimit", "cbc": "seconds", "glpk": "tmlim", "gurobi": "TimeLimit", "gams": "resLim"}
+		MaxTimeKey = {"highs": "time_limit", "xpress": "maxtime", "cplex": "timelimit", "cbc": "seconds", "glpk": "tmlim", "gurobi": "TimeLimit", "gams": "resLim"}
 		if solver in MaxTimeKey:
 			opt.options[MaxTimeKey[solver]] = self._maxTime
 		else:
@@ -173,15 +173,15 @@ class SelectByOptimize(sgc.SelectorBase):
 		logger.debug(res) # only for debugging
 
 		# reporting and checks
-		resStatus = f'{res.solver.status.key}_{res.solver.termination_condition.key}'
-		print(" - solver status = {}".format(res.solver.status.key))
-		# solver statuses: ok, warning, error, aborted, unknown (see `[x.key for x in pyo.SolverStatus]`)
+		resStatus = f'{res.solver.status.name}_{res.solver.termination_condition.name}'
+		print(" - solver status = {}".format(res.solver.status.name))
+		# solver statuses: ok, warning, error, aborted, unknown (see `[x.name for x in pyo.SolverStatus]`)
 		# - different solvers use either aborted or warning when stopped by time limit -> abort only on error
 		if res.solver.status == pyo.SolverStatus.error:
 			return dict(), resStatus
 
-		print(" - termination condition = {}".format(res.solver.termination_condition))
-		# to get a list of statuses: ``[x.key for x in pyo.TerminationCondition]
+		print(" - termination condition = {}".format(res.solver.termination_condition.name))
+		# to get a list of statuses: ``[x.name for x in pyo.TerminationCondition]
 		if res.solver.termination_condition not in [pyo.TerminationCondition.optimal,
 		                                            pyo.TerminationCondition.unknown,
 		                                            pyo.TerminationCondition.maxTimeLimit,

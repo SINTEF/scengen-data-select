@@ -73,7 +73,7 @@ def build_model(EPwrAsVar: bool, DistAsVar: bool, ScaleVars: bool) -> AbstractMo
 	# probabilities; using lambdas for rules
 	m.min_prob = Constraint(m.Days, rule=lambda m, d: m.p[d] >= m.MinProb * m.x[d])
 	m.max_prob = Constraint(m.Days, rule=lambda m, d: m.p[d] <= m.MaxProb * m.x[d])
-	m.sum_prob = Constraint(m.Days, rule=lambda m: sum(m.p[d] for d in m.Days) == 1.0)
+	m.sum_prob = Constraint(rule=lambda m: sum(m.p[d] for d in m.Days) == 1.0)
 
 	# definition of expected powers (E[X^k])
 	def exp_pwr_formula(m, meas, pwr):

@@ -4,8 +4,8 @@
 
 setlocal enabledelayedexpansion
 
-set SOLVER=cbc
-set SOLVER_PATH=cbc.bat
+set SOLVER=highs
+::set SOLVER_PATH=
 
 set DATA="prices\prices_*.csv"
 set SOL_DIR=scens
