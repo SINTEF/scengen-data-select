@@ -3,9 +3,10 @@
 # - this is a generic version, with simple matrix-based input/output
 
 # TODO:
-# - replace print statements with logger calls
 # - move read_config to scengen_common or a new file
 #   - also test schema validation
+# - allow multiple input files
+# - allow multi-period scenarios, with aggregation (like in the TIMES interface)
 # - allow automatic separator detection (like pandas.read_csv with sep=None)
 # - allow auto-detection of index column? (for ex. assuming it is the first one?)
 
@@ -45,10 +46,10 @@ def read_config(configFile: str) -> dict:
 		with open(configFile, 'r') as f:
 			params = json.load(f)
 	except IOError as err:
-		print("Error: could not open the configuration file {}:\n - {}".format(configFile, err))
+		logger.error(f"Could not open the configuration file {configFile}")
 		sys.exit(1)
 	except Exception as err:
-		print("Error parsing the configuration file {}:\n - {}".format(configFile, err))
+		logger.exception(f"Error parsing the configuration file {configFile}")
 
 	# if possible validate the config file against its schema
 	schemaFile = params.get('$schema', '')
@@ -58,14 +59,13 @@ def read_config(configFile: str) -> dict:
 			with open(schemaFile, 'r') as f:
 				schema = json.load(f)
 		except Exception as err:
-			print("Error parsing the json schema file {}:\n - {}".format(configFile, err))
+			logger.exception(f"Error parsing the json schema file {configFile}")
 			sys.exit(1)
 		import jsonschema
 		try:
 			jsonschema.validate(params, schema)
 		except jsonschema.exceptions.ValidationError as err:
-			print("Error: the configuration file {} does not validate against the schema from {}:\n - {}\n - {}".format(\
-				configFile, schemaFile, err.message, err.path))
+			logger.exception(f"The configuration file {configFile} does not validate against the schema from {schemaFile}")
 			sys.exit(2)
 
 	return params
@@ -88,7 +88,7 @@ def get_data(params: dict) -> pd.DataFrame:
 	if colSep == 'tab':
 		colSep = '\t'  # the actual tab character ('	') works as well
 
-	print("Reading the input file.")
+	logger.info("Reading the input file.")
 
 	df = pd.read_csv(dataFile, sep=colSep, index_col=indexCol)
 	return df
@@ -122,6 +122,8 @@ def main():
 	#
 	parser.add_argument("--n-samples", type=int, help="number of samples for the sampling method")
 	parser.add_argument("--k-means-var", help="variant of the k-means method to use")
+	#
+	parser.add_argument("--hyopt", action='store_true', help=argparse.SUPPRESS)  # temporarily hidden option for HyOpt-specific runs
 
 	# parsing
 	args = parser.parse_args()
@@ -192,7 +194,7 @@ def main():
 	nScen = parSG['nmb-scen']
 
 	selectorType = parSG.get('selector', 'optimization')
-	print(f"Initializing selector object of type '{selectorType}'.")
+	logger.info(f"Initializing selector object of type '{selectorType}'.")
 	
 	match selectorType:
 		case 'optimization':
@@ -242,19 +244,23 @@ def main():
 
 	# calling the run() method of the selector
 	tStart = timer()
-	[resProb, resStatus] = selector.run(df)
+	try:
+		[resProb, resStatus] = selector.run(df)
+	except Exception as err:
+		logger.exception("Error during scenario selection:")
+		sys.exit(1)
 	if len(resProb) == 0:
 		# no results!
-		print(f" - selection failed, status = {resStatus}")
+		logger.error(f" - selection failed, status = {resStatus}")
 		sys.exit(1)
-	print(f" - selection finished in {timer() - tStart:.1f} s")
-	print(f" - returned status: {resStatus}")
+	logger.info(f" - selection finished in {timer() - tStart:.1f} s")
+	logger.info(f" - returned status: {resStatus}")
 
 	if len(resProb) != nScen:
-		print(" - ERROR: wrong number of scenarios returned -> aborting!")
-		print(f"nScen = {nScen}")
-		print(f"len(resProb) = {len(resProb)}")
-		print(f"resProb = {resProb}")
+		logger.error(" - ERROR: wrong number of scenarios returned -> aborting!")
+		logger.error(f"nScen = {nScen}")
+		logger.error(f"len(resProb) = {len(resProb)}")
+		logger.error(f"resProb = {resProb}")
 		sys.exit(1)
 
 	# filter df by index: https://stackoverflow.com/a/45040370/842693
@@ -262,7 +268,7 @@ def main():
 	# - filtering creates a read-only slice -> need to create a copy!
 	dSel = df[df.index.isin(resProb.keys())].copy()
 	if len(dSel) != nScen:
-		print(" - ERROR: wrong number of non-zero probabilities returned -> aborting!")
+		logger.error(" - wrong number of non-zero probabilities returned -> aborting!")
 		sys.exit(1)
 	
 	# add the column of probabilities, if required
@@ -276,10 +282,15 @@ def main():
 			assert np.isclose(dSel['prob'].sum(), 1.0), "probabilities must sum up to 1!"
 
 	outFile = outFileBase + ".csv"
-	print("Saving results to file " + outFile + '.')
+	logger.info("Saving results to file " + outFile + '.')
 	dSel.to_csv(outFile, float_format="%g", index=False)
 
-	print("Done.")
+	if args.hyopt:
+		# testing output for HyOpt
+		print("HyOpt output:")
+		print(f"resProb = {resProb}")
+
+	logger.info("Done.")
 
 
 if __name__ == "__main__":

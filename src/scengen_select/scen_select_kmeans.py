@@ -27,7 +27,7 @@ class SelectByKMeans(sgc.SelectorBase):
 			self._kmeans.set_params(max_iter=parKM['max-iter'])
 	
 	
-	def run(self, df: pd.DataFrame, season = '', nScen: int = None) -> [dict, str]:
+	def run(self, df: pd.DataFrame, season = '', nScen: int|None = None) -> tuple[dict, str]:
 		"""
 		this runs the selection method
 
@@ -35,8 +35,9 @@ class SelectByKMeans(sgc.SelectorBase):
 		- df = data frame with the data series; its index is used to identify the selection
 		- nScen = number of scenarios/sequences to select (if different from self._nmbScen)
 		"""
+		nScen = nScen or self._nmbScen
 		if nScen == None:
-			nScen = self._nmbScen
+			raise ValueError("Number of scenarios to select not specified!")
 
 		if float(pd.__version__[2:]) >= 24:
 			Days = df.index.to_list()

@@ -51,8 +51,9 @@ class SelectorBase(ABC):
 		arguments:
 		- parSG - contents of the 'scen-gen' part of the JSON file, as dict
 		"""
-		self._logFileBase = parSG.get('logfile-base', '')  # can be overwritten
-		self._nmbScen = parSG['nmb-scen']
+		# store common parameters - may be overridden in the run() method
+		self._logFileBase = parSG.get('logfile-base', '')
+		self._nmbScen = parSG.get('nmb-scen', None)
 	
 	@abstractmethod
 	def run(self, df: pd.DataFrame, season = '', nScen: int = None) -> [dict, str]:

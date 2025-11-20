@@ -76,7 +76,7 @@ class SelectByScenRed(sgc.SelectorBase):
 		return u_sc
 
 
-	def run(self, df: pd.DataFrame, season = '', nScen: int = None) -> [dict, str]:
+	def run(self, df: pd.DataFrame, season = '', nScen: int|None = None) -> tuple[dict, str]:
 		"""
 		this runs the selection method
 
@@ -84,8 +84,10 @@ class SelectByScenRed(sgc.SelectorBase):
 		- df = data frame with the data series; its index is used to identify the selection
 		- nScen = number of scenarios/sequences to select (if different from self._nmbScen)
 		"""
+		nScen = nScen or self._nmbScen
 		if nScen == None:
-			nScen = self._nmbScen
+			raise ValueError("Number of scenarios to select not specified!")
+			
 
 		self.setup_data(df)
 

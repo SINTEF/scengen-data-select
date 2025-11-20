@@ -20,7 +20,8 @@ dependencies = [
 	"scikit-learn",
 	"scikit-learn-extra",
 	"matplotlib",
-	"pyomo"
+	"pyomo",    # required by optimization-based approaches
+	"networkx"  # required by constrainted k-means
 ]
 
 [project.urls]
